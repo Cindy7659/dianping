@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author 虎哥
@@ -68,8 +68,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
      * 脚本初始化
      */
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
+
     static {
-        SECKILL_SCRIPT=new DefaultRedisScript<>();
+        SECKILL_SCRIPT = new DefaultRedisScript<>();
         SECKILL_SCRIPT.setLocation(new ClassPathResource("seckill.lua"));
         SECKILL_SCRIPT.setResultType(Long.class);
     }
@@ -175,31 +176,33 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         }
     }*/
 
-        public void handleVoucherOrder(VoucherOrder voucherOrder) {
-            //1.获取用户
-            Long userId = voucherOrder.getUserId();
-            //2.创建锁对象
-            RLock lock = redissonClient.getLock("lock:order:" + userId);
-            //3.获取锁
-            boolean isLock = lock.tryLock();
-            //4.判断是否获取锁成功
-            if(!isLock) {
-                //失败，返回错误或重试
-               log.error("不允许重复下单");
-               return;
-            }
-            try {
-                //直接调用，不会触发spring aop的事务管理
-                //要通过代理调用，获取代理对象，才会被spring aop拦截
-                proxy.createVoucherOrder(voucherOrder);
-            } catch (IllegalStateException e) {
-                throw new RuntimeException(e);
-            }finally {
-                //释放锁
-                lock.unlock();
-            }
+    public void handleVoucherOrder(VoucherOrder voucherOrder) {
+        //1.获取用户
+        Long userId = voucherOrder.getUserId();
+        //2.创建锁对象
+        RLock lock = redissonClient.getLock("lock:order:" + userId);
+        //3.获取锁
+        boolean isLock = lock.tryLock();
+        //4.判断是否获取锁成功
+        if (!isLock) {
+            //失败，返回错误或重试
+            log.error("不允许重复下单");
+            return;
         }
+        try {
+            //直接调用，不会触发spring aop的事务管理
+            //要通过代理调用，获取代理对象，才会被spring aop拦截
+            proxy.createVoucherOrder(voucherOrder);
+        } catch (IllegalStateException e) {
+            throw new RuntimeException(e);
+        } finally {
+            //释放锁
+            lock.unlock();
+        }
+    }
+
     private IVoucherOrderService proxy;
+
     @Override
     public Result seckillVoucher(Long voucherId) {
         //获取用户id
@@ -210,16 +213,16 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         Long result = stringRedisTemplate.execute(
                 SECKILL_SCRIPT,
                 Collections.emptyList(),
-                voucherId.toString(), userId.toString(),String.valueOf(orderId)
+                voucherId.toString(), userId.toString(), String.valueOf(orderId)
         );
         //2.判断结果是否为0
         int r = 0;
         if (result != null) {
             r = result.intValue();
         }
-        if(r!=0){
+        if (r != 0) {
             //2.1.不为0，代表没有购买资格
-            return Result.fail(r==1?"库存不足":"不能重复下单");
+            return Result.fail(r == 1 ? "库存不足" : "不能重复下单");
         }
 //        //3.获取代理对象
 //        proxy = (IVoucherOrderService) AopContext.currentProxy();
@@ -235,7 +238,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         //放入mq
         String jsonStr = JSONUtil.toJsonStr(order);
         try {
-            rabbitTemplate.convertAndSend("X","XA",jsonStr );
+            rabbitTemplate.convertAndSend("X", "XA", jsonStr);
         } catch (Exception e) {
             log.error("发送 RabbitMQ 消息失败，订单ID: {}", orderId, e);
             throw new RuntimeException("发送消息失败");
@@ -294,27 +297,27 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     public void createVoucherOrder(VoucherOrder voucherOrder) {
         //一人一单
         //查询订单
-        Long userId =voucherOrder.getUserId();
-            int count = query().eq("user_id", userId).eq("voucher_id", voucherOrder.getVoucherId()).count();
-            //判断是否存在
-            if (count > 0) {
-                //用户已经购买过了
-                log.error("用户已经购买过一次了");
-                return;
-            }
-            //扣减库存
-            boolean success = seckillVoucherService
-                    .update()
-                    .setSql("stock=stock-1")
-                    .eq("voucher_id", voucherOrder.getVoucherId())
-                    .gt("stock", 0)
-                    .update();
-            if (!success) {
-                log.error("库存不足");
-                return ;
-            }
+        Long userId = voucherOrder.getUserId();
+        int count = query().eq("user_id", userId).eq("voucher_id", voucherOrder.getVoucherId()).count();
+        //判断是否存在
+        if (count > 0) {
+            //用户已经购买过了
+            log.error("用户已经购买过一次了");
+            return;
+        }
+        //扣减库存
+        boolean success = seckillVoucherService
+                .update()
+                .setSql("stock=stock-1")
+                .eq("voucher_id", voucherOrder.getVoucherId())
+                .gt("stock", 0)
+                .update();
+        if (!success) {
+            log.error("库存不足");
+            return;
+        }
 
-            save(voucherOrder);
+        save(voucherOrder);
 
     }
 }
