@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author 虎哥
@@ -36,30 +36,31 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Resource
     private UserServiceImpl userService;
+
     @Override
     public Result follow(Long followUserId, Boolean isFollow) {
         //获取登录用户
         Long userId = UserHolder.getUser().getId();
         String key = "follows:" + userId;
         //1.判断关注还是取关
-        if(isFollow) {
+        if (isFollow) {
             //2.关注
             Follow follow = new Follow();
             follow.setFollowUserId(followUserId);
             follow.setUserId(userId);
             boolean isSuccess = save(follow);
-            if(isSuccess){
+            if (isSuccess) {
                 //把关注用户的id，放入redis的set集合 sadd userId followUserId
-                stringRedisTemplate.opsForSet().add(key,followUserId.toString());
+                stringRedisTemplate.opsForSet().add(key, followUserId.toString());
             }
-        }else {
+        } else {
             //3.取关
             boolean isSuccess = remove(new QueryWrapper<Follow>()
                     .eq("user_id", userId)
                     .eq("follow_user_id", followUserId));
             //移除
-            if(isSuccess){
-                stringRedisTemplate.opsForSet().remove(key,followUserId.toString());
+            if (isSuccess) {
+                stringRedisTemplate.opsForSet().remove(key, followUserId.toString());
             }
         }
         return Result.ok();
@@ -70,7 +71,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         Long userId = UserHolder.getUser().getId();
         //1.查询是否关注select* from tb_follow where user_id=？ and follow_id=?
         Integer count = query().eq("user_id", userId).eq("follow_user_id", followUserId).count();
-            return Result.ok(count>0);
+        return Result.ok(count > 0);
 
     }
 
@@ -82,7 +83,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         //求交集
         String key2 = "follows:" + id;
         Set<String> intersect = stringRedisTemplate.opsForSet().intersect(key, key2);
-        if(intersect==null||intersect.isEmpty()){
+        if (intersect == null || intersect.isEmpty()) {
             return Result.ok(Collections.emptyList());
         }
         //解析出id

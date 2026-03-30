@@ -9,7 +9,6 @@ import java.util.HashMap;
 
 @Configuration
 public class QueueConfig {
-
     //普通交换机名称
     public static final String X_EXCHANGE = "X";
     //死信交换机名称
@@ -18,7 +17,6 @@ public class QueueConfig {
     public static final String QUEUE_A = "QA";
     //死信队列名称
     public static final String DEAD_LETTER_QUEUE_D = "QD";
-
 
     /**
      * 声明x交换机

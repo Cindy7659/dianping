@@ -8,17 +8,22 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * 用来生成全局唯一的ID
+ *
+ */
 @Component
 public class RedisIdWorker {
     //开始时间戳
-    private static final long BEGIN_TIMESTAMP=1640995200L;
+    private static final long BEGIN_TIMESTAMP = 1640995200L;
 
     //序列号位数
-    private static final int COUNT_BITS=32;
+    private static final int COUNT_BITS = 32;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
-    public Long nextId(String keyPrefix){
+
+    public Long nextId(String keyPrefix) {
         //1.生成时间戳
         LocalDateTime now = LocalDateTime.now();
         long nowSecond = now.toEpochSecond(ZoneOffset.UTC);
@@ -27,10 +32,10 @@ public class RedisIdWorker {
         //2.1.获取当前日期，精确到天
         String date = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
         Long count = stringRedisTemplate.opsForValue().increment("icr:" + keyPrefix + ":" + date);
-
-
+        if (count == null) {
+            count = 32L;
+        }
         //3.拼接并返回
-        return timestamp<<COUNT_BITS | count;
+        return timestamp << COUNT_BITS | count;
     }
-
 }

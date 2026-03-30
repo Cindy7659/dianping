@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 public class RedisData {
     //逻辑过期时间
     private LocalDateTime expireTime;
-
     //组合
     private Object data;
 }

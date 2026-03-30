@@ -19,27 +19,27 @@ import javax.servlet.http.HttpSession;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+// 比LoginInterceptor先执行
 public class RefreshTokenInterceptor implements HandlerInterceptor {
 
-    private  StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     public RefreshTokenInterceptor(StringRedisTemplate stringRedisTemplate) {
-        this.stringRedisTemplate=stringRedisTemplate;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
-
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         //1.获取请求头中的token
         String token = request.getHeader("authorization");
-        //2.基于token获取redis中的用户
+        //2.检查token是否为 null, "", 只包含空白字符。获取redis中的用户
         if (StrUtil.isBlank(token)) {
             return true;
         }
         String userKey = RedisConstants.LOGIN_USER_KEY + token;
         Map<Object, Object> map = stringRedisTemplate.opsForHash().entries(userKey);
         //3.判断用户是否存在
-        if(map.isEmpty()) {
+        if (map.isEmpty()) {
             return true;
         }
         //5.将查询到Hash数据转换为userDTO对象
@@ -47,13 +47,13 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
         //6.存在，保存用户信息到ThreadLocal
         UserHolder.saveUser(userDTO);
         //7.刷新有效期
-        stringRedisTemplate.expire(userKey,30, TimeUnit.MINUTES);
+        stringRedisTemplate.expire(userKey, 30, TimeUnit.MINUTES);
         //放行
         return true;
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
+        UserHolder.removeUser(); // 清理 ThreadLocal 中的用户信息
     }
 }
