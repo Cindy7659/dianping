@@ -33,6 +33,7 @@ public class RedisIdWorker {
         String date = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
         Long count = stringRedisTemplate.opsForValue().increment("icr:" + keyPrefix + ":" + date);
         if (count == null) {
+            // 这里没用，只是让idea不报错
             count = 32L;
         }
         //3.拼接并返回
