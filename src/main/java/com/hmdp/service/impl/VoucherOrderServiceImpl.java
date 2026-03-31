@@ -73,7 +73,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         SECKILL_SCRIPT.setResultType(Long.class);
     }
 
-    //阻塞队列，线程从中获取时，如果为空，则线程阻塞
+    //线程池
     private static final ExecutorService SECKILL_ORDER_EXECUTOR = Executors.newSingleThreadExecutor();
 
     @PostConstruct
@@ -105,6 +105,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                     Map<Object, Object> values = record.getValue();
                     VoucherOrder voucherOrder = BeanUtil.fillBeanWithMap(values, new VoucherOrder(), true);
                     //4.如果获取成功，可以下单
+                    // 如果这行处理时发生异常，程序会跳到异常处理，不会执行ACK，此时这条消息就会留在 pending-list 中。
                     handleVoucherOrder(voucherOrder);
                     //5.ACK确认 SACK stream.orders g1 id
                     stringRedisTemplate.opsForStream().acknowledge(queueName, "g1", record.getId());
@@ -123,7 +124,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             while (true) {
                 try {
                     //1.获取pending-list中的队列信息
-                    //XREADGROUP GROUP g1 c1 COUNT 1 STREAMS streams.orders 0
+                    //XREADGROUP GROUP g1 c1 COUNT 1 STREAMS stream.orders 0
+                    //这里的0是特殊标识，专门用于读取 pending-list
                     List<MapRecord<String, Object, Object>> list = stringRedisTemplate.opsForStream().read(
                             Consumer.from("g1", "c1"),
                             StreamReadOptions.empty().count(1),
@@ -263,47 +265,4 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // 3. 返回订单号给前端（实际下单异步处理）
         return Result.ok(orderId);
     }
-
-//    public Result seckillVoucher(Long voucherId) {
-//        //查询用户券信息
-//        SeckillVoucher voucher = seckillVoucherService.getById(voucherId);
-//        //判断秒杀时间
-//        //是否开始
-//        LocalDateTime beginTime = voucher.getBeginTime();
-//        if(beginTime.isAfter(LocalDateTime.now())){
-//            return Result.fail("秒杀尚未开始！");
-//        }
-//        //是否结束
-//        LocalDateTime endTime = voucher.getEndTime();
-//        if(endTime.isBefore(LocalDateTime.now())){
-//            return Result.fail("秒杀已经结束");
-//        }
-//        //判断库存呢是否充足
-//        if(voucher.getStock()<=0){
-//            return Result.fail("库存不足！");
-//        }
-//        Long userId = UserHolder.getUser().getId();
-//       //创建锁对象
-//        //SimpleRedisLock  lock = new SimpleRedisLock("order:" + userId, stringRedisTemplate);
-//        RLock lock = redissonClient.getLock("lock:order:" + userId);
-//        //获取锁
-//        boolean isLock = lock.tryLock();
-//        //判断是否获取锁成功
-//        if(!isLock) {
-//            //失败，返回错误或重试
-//            return Result.fail("不允许重复下单");
-//
-//        }
-//        try {
-//            //直接调用，不会触发spring aop的事务管理
-//            //要通过代理调用，获取代理对象，才会被spring aop拦截
-//            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
-//            return proxy.createVoucherOrder(voucherId);
-//        } catch (IllegalStateException e) {
-//            throw new RuntimeException(e);
-//        }finally {
-//            //释放锁
-//            lock.unlock();
-//        }
-//    }
 }

@@ -82,6 +82,14 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         return Result.ok();
     }
 
+    /**
+     * 根据商店类型分页查询
+     * @param typeId
+     * @param current
+     * @param x
+     * @param y
+     * @return
+     */
     @Override
     public Result queryShopByType(Integer typeId, Integer current, Double x, Double y) {
         //1.是否根据坐标查询

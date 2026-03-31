@@ -102,6 +102,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.ok(token);
     }
 
+    /**
+     * 通过redis的BitMap功能实现签到功能
+     */
     @Override
     public Result sign() {
         //1.获取当前登录用户
@@ -118,6 +121,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.ok();
     }
 
+    /**
+     * 统计连续签到功能
+     */
     @Override
     public Result signCount() {
         //1.获取当前登录用户
@@ -139,13 +145,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return Result.ok(0);
         }
         Long num = result.get(0);
-        if (num == 0 || num == null) {
+        if (num == 0) {
             return Result.ok(0);
         }
         //6.循坏遍历
         int count = 0;
         while (true) {
             //让这个数字与1做与运算，得到数字的最后一个bit位，判断这个bit是否为0
+            //这个数字的最低位表示的是最新的一天
             if ((num & 1) == 0) {
                 //如果为0，未签到
                 break;
@@ -157,12 +164,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             }
         }
         return Result.ok(count);
-
     }
 
-    /*
+    /**
      * 创建新用户并保存到数据库
-     * */
+     */
     private User createUserWithPhone(String phone) {
         User user = new User();
         user.setPhone(phone);

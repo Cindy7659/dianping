@@ -70,6 +70,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         return Result.ok(records);
     }
 
+    /**
+     * 点赞功能接口
+     */
     @Override
     public Result updateLike(Long id) {
         //1.获取当前用户
@@ -79,7 +82,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         Double score = stringRedisTemplate.opsForZSet().score(key, userId.toString());
         if (score == null) {
             //3.如果未点赞，可以点赞
-            //3.1.数据库点赞数+1
+            //3.1.数据库点赞数+1发VS许昌v
             boolean isSuccess = update().setSql("liked=liked+1").eq("id", id).update();
             //3.2.保存用户到redis的set集合  zadd key value score
             if (isSuccess) {
@@ -97,6 +100,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         return Result.ok();
     }
 
+    /**
+     * 查询用户点赞数
+     */
     @Override
     public Result queryBlogLikes(Long id) {
         //1.查询top5的点赞用户
@@ -115,10 +121,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
                 .stream()
                 .map(user -> BeanUtil.copyProperties(user, UserDTO.class))
                 .collect(Collectors.toList());
-
         //4.返回
         return Result.ok(userDTOS);
-
     }
 
     @Override
@@ -145,6 +149,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         return Result.ok(blog.getId());
     }
 
+    /**
+     *
+     */
     @Override
     public Result quertBlogOfFollow(Long max, Integer offset) {
         //1.获取当前用户
@@ -228,5 +235,4 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         blog.setName(user.getNickName());
         blog.setIcon(user.getIcon());
     }
-
 }

@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 /**
  * <p>
- * 服务实现类
+ * 关注相关接口服务实现类
  * </p>
  *
  * @author 虎哥
@@ -37,6 +37,9 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     @Resource
     private UserServiceImpl userService;
 
+    /**
+     * 关注，取关
+     */
     @Override
     public Result follow(Long followUserId, Boolean isFollow) {
         //获取登录用户
@@ -66,21 +69,34 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         return Result.ok();
     }
 
+    /**
+     * 判断是否关注
+     *
+     * @param followUserId
+     * @return
+     */
     @Override
     public Result isFollow(Long followUserId) {
         Long userId = UserHolder.getUser().getId();
         //1.查询是否关注select* from tb_follow where user_id=？ and follow_id=?
-        Integer count = query().eq("user_id", userId).eq("follow_user_id", followUserId).count();
+        Integer count = query()
+                .eq("user_id", userId)
+                .eq("follow_user_id", followUserId).count();
         return Result.ok(count > 0);
-
     }
 
+    /**
+     * 共同关注
+     *
+     * @param id
+     * @return
+     */
     @Override
     public Result followCommons(Long id) {
         //获取当前用户
         Long userId = UserHolder.getUser().getId();
         String key = "follows:" + userId;
-        //求交集
+        //通过intersect求交集
         String key2 = "follows:" + id;
         Set<String> intersect = stringRedisTemplate.opsForSet().intersect(key, key2);
         if (intersect == null || intersect.isEmpty()) {
@@ -88,14 +104,11 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         }
         //解析出id
         List<Long> ids = intersect.stream().map(Long::valueOf).collect(Collectors.toList());
-
         //查询用户
         List<UserDTO> userDTOS = userService
                 .listByIds(ids).stream()
                 .map(user -> BeanUtil.copyProperties(user, UserDTO.class))
                 .collect(Collectors.toList());
-
         return Result.ok(userDTOS);
-
     }
 }
