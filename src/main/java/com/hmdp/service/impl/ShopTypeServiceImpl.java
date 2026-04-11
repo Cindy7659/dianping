@@ -46,7 +46,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         // 缓存不存在，则查询数据库
         List<ShopType> shopTypes = query().orderByAsc("sort").list();
         if (shopTypes == null || shopTypes.isEmpty()) {
-            return Result.fail("没有分类数据");
+            return Result.fail("没有店铺分类数据！");
         }
         for (ShopType shopType : shopTypes) {
             String json = JSONUtil.toJsonStr(shopType);

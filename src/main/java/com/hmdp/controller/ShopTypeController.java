@@ -27,13 +27,9 @@ public class ShopTypeController {
 
     /**
      * 查询所有商铺类型
-     *
-     * @return 商铺类型列表
      */
     @GetMapping("list")
     public Result queryTypeList() {
-//        List<ShopType> typeList = typeService
-//                .query().orderByAsc("sort").list();
         return typeService.querySort();
     }
 }

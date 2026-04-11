@@ -85,15 +85,30 @@ ABA问题出现：线程 1 执行取钱操作判断余额为 1000，执行余额
 我们可以给修改的数据加上一个版本号，初始化当前版本号与旧的版本号相等。判断当前版本号如果等于旧版本号则对数据进行
 修改，并使版本号自增。判断当前版本号大于旧版本号，则不进行任何操作。<br/>
 
+**Redisson 分布式锁**<br/>
+1.可重入:同一线程可以多次获取同一把锁，可以避免死锁，用hash结构存储.大key是根据业务设置的()，小key是线程唯一
+标识，value值是当前重入次数<br/>
+eg. RLock lock = redissonClient.getLock("lock:order:" + userId);<br/>
+2.可重试：Redisson手动加锁，可以控制锁的失效时间和等待时间，当锁住的一个业务并没有执行完成的时候，Redisson会
+引入一个Watch Dog看门狗机制。就是说，每隔一段时间就检查当前事务是否还持有锁。如果持有，就增加锁的持有时间。当业
+务执行完成之后，需要使用释放锁就可以了<br/>
+3.主从一致性：连锁(multiLock)-不再有主从节点，都获取成功才能获取锁成功，有一个节点获取锁不成功就获取锁失败<br/>
 
+**使用Redis的 ZSet 数据结构实现了点赞排行榜功能,使用Set 集合实现关注、共同关注功能**<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Zset 有序集合,是 Redis 提供的一种复杂数据类型。在set的基础上增加了一个权重参数score，使得集合中的元素能够按score
+进行有序排列。集合元素的添删查的时间复杂度都是 O(1)。这得益于Redis使用的是跳跃列表（skiplist）的数据结构来实现的<br/>
 
+**附近商铺搜索**<br/>
+Redis GEO本质：底层基于**Sorted Set（有序集合）**实现，存储每个位置的经纬度信息，并支持快速范围查询。<br/>
+核心能力：<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.添加位置：存储商户ID及其经纬度。<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.计算距离：获取两个位置间的距离。<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.范围搜索：查找某中心点半径范围内的所有商户。<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.排序：按距离升序或降序返回结果。<br/>
 
-
-
-
-
-
-
-
-
-
+**用户签到 ：基于Redis中的BitMap数据结构实现。**<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.Bitmap 位图：是一串连续的二进制数组（0和1），可以通过偏移量（offset）定位元素<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.适合一些数据量大且使用二值统计的场景<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.用String类型作为底层数据结构实现的一种统计二值状态的数据类型<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.String类型是会保存为二进制的字节数组，所以Redis就把字节数组的每个bit位利用起来，用来表示一个元素的二值状态<br/>

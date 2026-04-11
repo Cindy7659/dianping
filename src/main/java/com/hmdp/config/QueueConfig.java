@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
 
-@Configuration
+//@Configuration
 public class QueueConfig {
     //普通交换机名称
     public static final String X_EXCHANGE = "X";
@@ -25,6 +25,7 @@ public class QueueConfig {
      */
     @Bean("xExchange")//别名和方法名取一样
     public DirectExchange xExchange() {
+        // 创建直连交换机 X
         return new DirectExchange(X_EXCHANGE);
     }
 
@@ -35,34 +36,29 @@ public class QueueConfig {
      */
     @Bean("yExchange")//别名和方法名取一样
     public DirectExchange yExchange() {
+        // 创建直连交换机-死信交换机 Y
         return new DirectExchange(Y_DEAD_LETTER_EXCHANGE);
     }
 
     /**
-     * 声明队列A
-     *
-     * @return
+     * 声明普通队列QA
      */
     @Bean("queueA")
     public Queue queueA() {
-        final HashMap<String, Object> arguments
-                = new HashMap<>();
-        //设置死信交换机
+        final HashMap<String, Object> arguments = new HashMap<>();
+        //设置死信交换机 Y
         arguments.put("x-dead-letter-exchange", Y_DEAD_LETTER_EXCHANGE);
         //设置死信RoutingKey
         arguments.put("x-dead-letter-routing-key", "YD");
         //设置TTL设置10秒过期
         arguments.put("x-message-ttl", 10000);
-
         return QueueBuilder.durable(QUEUE_A)
                 .withArguments(arguments)
                 .build();
     }
 
     /**
-     * 声明死信队列D
-     *
-     * @return
+     * 声明死信队列QD
      */
     @Bean("queueD")
     public Queue queueD() {
@@ -71,10 +67,7 @@ public class QueueConfig {
     }
 
     /**
-     * A队列绑定X交换机
-     *
-     * @param queueA
-     * @return
+     * 普通队列QA队列绑定普通X交换机
      */
     @Bean
     public Binding queueABindingX(@Qualifier("queueA") Queue queueA,
@@ -83,7 +76,7 @@ public class QueueConfig {
     }
 
     /**
-     * d队列绑定y交换机
+     * 死信队列QD队列绑定死信y交换机
      *
      * @param queueD
      * @return
@@ -93,7 +86,4 @@ public class QueueConfig {
                                   @Qualifier("yExchange") DirectExchange yExchange) {
         return BindingBuilder.bind(queueD).to(yExchange).with("YD");
     }
-
-
 }
-

@@ -34,5 +34,5 @@ end
 redis.call('incrby', stockKey, -1)
 -- 3.6.下单(保存)用户 sadd orderKey userId
 redis.call('sadd', orderKey, userId)
--- 3.7. 发消息到消息队列中 XADD  stream.orders * k1 v1 k2 v2
+-- 3.7. 发消息到消息队列中 XADD  stream.orders * k1 v1 k2 v2      *表示自动生成唯一消息 ID
 redis.call('xadd', 'stream.orders', '*', 'userId', userId, 'voucherId', voucherId, 'id', orderId)

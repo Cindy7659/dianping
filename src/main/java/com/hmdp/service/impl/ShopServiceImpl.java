@@ -43,10 +43,10 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
     @Override
     public Result queryById(Long id) {
-        // 解决缓存穿透
-        //Shop shop = clientClient
-        // .queryWithPassThrough(RedisConstants.CACHE_SHOP_KEY, id, Shop.class,
-        //                   this::getById, RedisConstants.CACHE_SHOP_TTL, TimeUnit.MINUTES);
+        //解决缓存穿透
+        Shop shop = clientClient
+                .queryWithPassThrough(RedisConstants.CACHE_SHOP_KEY, id, Shop.class,
+                        this::getById, RedisConstants.CACHE_SHOP_TTL, TimeUnit.MINUTES);
 
         //1.互斥锁 解决缓存击穿
         /*Shop shop = clientClient.queryWithMutex(
@@ -58,16 +58,18 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             TimeUnit.MINUTES
         );*/
 
-        //2.逻辑过期 解决缓存击穿
-        Shop shop = clientClient.
-                queryWithLogicalExpire(CACHE_SHOP_KEY, id, Shop.class,
-                        this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
+        /*//2.逻辑过期 解决缓存击穿
+        Shop shop = clientClient.queryWithLogicalExpire(CACHE_SHOP_KEY, id, Shop.class,
+                this::getById, RedisConstants.CACHE_SHOP_TTL, TimeUnit.MINUTES);
         if (shop == null) {
             return Result.fail("店铺不存在！");
-        }
+        }*/
         return Result.ok(shop);
     }
 
+    /**
+     * 更新店铺信息
+     */
     @Override
     @Transactional
     public Result update(Shop shop) {
@@ -84,11 +86,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
     /**
      * 根据商店类型分页查询
-     * @param typeId
-     * @param current
-     * @param x
-     * @param y
-     * @return
      */
     @Override
     public Result queryShopByType(Integer typeId, Integer current, Double x, Double y) {

@@ -113,15 +113,17 @@ public class CacheClient {
     }
 
     /**
-     * 2.逻辑过期 解决缓存击穿
+     * 2.逻辑过期 解决缓存击穿（热点key问题）<br/>
+     * 对于热点key，必须先将缓存数据提前预热到 redis中
      */
     public <R, ID> R queryWithLogicalExpire(
             String keyPrefix, ID id, Class<R> type, Function<ID, R> dbFallback, Long time, TimeUnit unit) {
+        // key： cache:shop:${id}
         String key = keyPrefix + id;
         //1.尝试从Redis查询商铺缓存
         String json = stringRedisTemplate.opsForValue().get(key);
-        //2.判断缓存是否存在
-        if (StrUtil.isBlank(json)) { //判断字符串既不为null，也不是空字符串(""),且也不是空白字符
+        //2.判断缓存是否存在 查不到就说明不是热点数据
+        if (StrUtil.isBlank(json)) { //判断字符串为null，空字符串(""),空白字符
             //3.不存在，返回商铺信息
             return null;
         }

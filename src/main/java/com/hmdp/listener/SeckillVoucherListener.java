@@ -10,17 +10,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+
 import javax.annotation.Resource;
 
-@Component
-@RequiredArgsConstructor
 @Slf4j
+//@Component
+//@RequiredArgsConstructor
 public class SeckillVoucherListener {
-
     @Resource
     SeckillVoucherServiceImpl seckillVoucherService;
     @Resource
     VoucherOrderServiceImpl voucherOrderService;
+
+    // TODO 这里都没有做seckill.lua脚本的业务，需要再去查一次数据库看看订单存不存在，感觉存在问题。
+    //  不能保证原子性，可以添加 @Transactional事务注解
 
     /**
      * sheng  消费者1
@@ -31,7 +34,7 @@ public class SeckillVoucherListener {
         String msg = new String(message.getBody());
         log.info("正常队列:");
         VoucherOrder voucherOrder = JSONUtil.toBean(msg, VoucherOrder.class);
-        log.info(voucherOrder.toString());
+        log.info("订单信息：" + voucherOrder.toString());
         voucherOrderService.save(voucherOrder);//保存到数据库
         //数据库秒杀库存减一
         Long voucherId = voucherOrder.getVoucherId();
@@ -52,7 +55,7 @@ public class SeckillVoucherListener {
         log.info("死信队列:");
         String msg = new String(message.getBody());
         VoucherOrder voucherOrder = JSONUtil.toBean(msg, VoucherOrder.class);
-        log.info(voucherOrder.toString());
+        log.info("订单信息：" + voucherOrder.toString());
         voucherOrderService.save(voucherOrder);
         Long voucherId = voucherOrder.getVoucherId();
         seckillVoucherService.update()

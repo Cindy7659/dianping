@@ -82,7 +82,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         Double score = stringRedisTemplate.opsForZSet().score(key, userId.toString());
         if (score == null) {
             //3.如果未点赞，可以点赞
-            //3.1.数据库点赞数+1发VS许昌v
+            //3.1.数据库点赞数+1
             boolean isSuccess = update().setSql("liked=liked+1").eq("id", id).update();
             //3.2.保存用户到redis的set集合  zadd key value score
             if (isSuccess) {
@@ -101,7 +101,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     }
 
     /**
-     * 查询用户点赞数
+     * Zset实现点赞排行榜
      */
     @Override
     public Result queryBlogLikes(Long id) {
@@ -116,6 +116,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         String idStr = StrUtil.join(",", ids);
         //3.根据用户id查询用户
         //SELECT *from tb_user where id IN(5,1) ORDER BY FIELD(id,5,1)
+        //IN查询不保证顺序,可能返回 [1,2,3,5,8],但前端需要显示点赞顺序 [5,1,8,3,2],所以用FIELD强制按指定顺序排列。
         List<UserDTO> userDTOS = userService.query()
                 .in("id", ids).last("order by field(id," + idStr + ")").list()
                 .stream()
@@ -125,6 +126,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         return Result.ok(userDTOS);
     }
 
+    /**
+     * 发布博客
+     */
     @Override
     public Result saveBlog(Blog blog) {
         // 获取登录用户
@@ -141,7 +145,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         for (Follow follow : follows) {
             //获取粉丝id
             Long userId = follow.getUserId();
-            //推送
+            //feed流实现推送  feed:${userId}
             String key = FEED_KEY + userId;
             stringRedisTemplate.opsForZSet().add(key, blog.getId().toString(), System.currentTimeMillis());
         }
@@ -150,7 +154,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     }
 
     /**
-     *
+     * feed流实现查询收件箱
      */
     @Override
     public Result quertBlogOfFollow(Long max, Integer offset) {
@@ -178,13 +182,11 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
                 minTime = time;
                 os = 1;
             }
-
         }
         //4.根据id查询blog
         String idStr = StrUtil.join(",", ids);
         List<Blog> blogs = query()
                 .in("id", ids).last("order by field(id," + idStr + ")").list();
-
         for (Blog blog : blogs) {
             //4.1.查询blog有关的用户
             queryBlogUser(blog);
@@ -197,7 +199,6 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         scrollResult.setOffset(os);
         scrollResult.setMinTime(minTime);
         return Result.ok(scrollResult);
-
     }
 
     @Override
@@ -222,7 +223,6 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             return;
         }
         Long userId = user.getId();
-
         //2.判断当前用户有没有点赞
         String key = BLOG_LIKED_KEY + blog.getId();
         Double score = stringRedisTemplate.opsForZSet().score(key, userId.toString());
