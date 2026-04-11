@@ -39,9 +39,10 @@ public class CacheClient {
             String keyPrefix, ID id, Class<R> type, Function<ID, R> dbFallback, Long time, TimeUnit unit) {
         String key = keyPrefix + id;
         //1.尝试从Redis查询商铺缓存
+        //判断字符串既不为null，也不是空字符串(""),且也不是空白字符
         String json = stringRedisTemplate.opsForValue().get(key);
         //2.判断缓存是否存在
-        if (StrUtil.isNotBlank(json)) { //判断字符串既不为null，也不是空字符串(""),且也不是空白字符
+        if (StrUtil.isNotBlank(json)) {
             //3.存在，返回商铺信息
             return JSONUtil.toBean(json, type);
         }
@@ -81,6 +82,7 @@ public class CacheClient {
             return null;
         }
         R r = null;
+        //  通过 lock:shop:${id} 查询店铺缓存数据
         String lockKey = RedisConstants.LOCK_SHOP_KEY + id;
         try {
             // 5.获取互斥锁
@@ -98,6 +100,7 @@ public class CacheClient {
                 return null;
             }
             // 9.数据库存在，写入Redis
+            // 这里其实可以再查一次redis，防止上一个抢到锁的线程已经更新了 ---> 双重检查锁
             stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(r), time, unit);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -111,7 +114,6 @@ public class CacheClient {
 
     /**
      * 2.逻辑过期 解决缓存击穿
-     * TODO 如果缓存不命中的话他不会进行缓存的重构
      */
     public <R, ID> R queryWithLogicalExpire(
             String keyPrefix, ID id, Class<R> type, Function<ID, R> dbFallback, Long time, TimeUnit unit) {
@@ -154,7 +156,7 @@ public class CacheClient {
                 }
             });
         }
-        //6.4.返回过期的商铺信息
+        //6.4.获取不到就返回过期的商铺信息
         return shop;
     }
 

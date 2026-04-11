@@ -6,12 +6,16 @@ import org.redisson.config.Config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Redisson配置类
+ */
 @Configuration
 public class RedissonConfig {
     @Bean
     public RedissonClient redissonClient() {
         //配置
         Config config = new Config();
+        // 单节点,可以使用 userClusterServers()添加集群地址
         config.useSingleServer().setAddress("redis://127.0.0.1:6379");
         return Redisson.create(config);
     }

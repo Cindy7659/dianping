@@ -9,6 +9,11 @@ import org.springframework.data.redis.support.collections.DefaultRedisList;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 这是我们自己实现的锁，第一个版本没有增加线程标识，可能存在误删锁的问题<br/>
+ * 于是第二个版本引入线程标识，防止误删，但是锁还是可能因业务执行超时而自动释放。<br/>
+ * 因此，最后我们引入了 Redisson 框架，利用其 WatchDog 自动续期机制，从根本上解决了锁过期问题
+ */
 public class SimpleRedisLock implements ILock {
     //锁名称
     private final String name;

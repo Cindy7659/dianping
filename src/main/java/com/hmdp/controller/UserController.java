@@ -36,9 +36,6 @@ public class UserController {
     @Resource
     private IUserInfoService userInfoService;
 
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
-
     /**
      * 发送手机验证码
      */

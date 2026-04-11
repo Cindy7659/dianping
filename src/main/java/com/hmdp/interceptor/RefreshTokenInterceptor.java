@@ -19,7 +19,13 @@ import javax.servlet.http.HttpSession;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-// 比LoginInterceptor先执行
+/**
+ * 1.刷新token拦截器,比LoginInterceptor先执行, 全都放行<br/>
+ * 2.首先获取请求头中的token，如果token为空，则直接放行<br/>
+ * 3.如果token不为空，则从redis中获取用户信息，解析得到 UserDTO对象，保存到ThreadLocal中<br/>
+ * 4.刷新 login:token:${token} 有效期<br/><br/>
+ * 做全局处理，所有请求路径都拦截，例如获取Token，查询Redis中的用户信息，刷新Token有效期等通用操作
+ */
 public class RefreshTokenInterceptor implements HandlerInterceptor {
 
     private final StringRedisTemplate stringRedisTemplate;
@@ -36,6 +42,7 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
         if (StrUtil.isBlank(token)) {
             return true;
         }
+        // login:token:${token}
         String userKey = RedisConstants.LOGIN_USER_KEY + token;
         Map<Object, Object> map = stringRedisTemplate.opsForHash().entries(userKey);
         //3.判断用户是否存在

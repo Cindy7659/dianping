@@ -89,6 +89,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         public void run() {
             while (true) {
                 try {
+                    // 先创建队列 xgroup create stream.orders g1 0 mkstream
                     //1.获取消息队列中的队列信息 XREADGROUP GROUP g1 c1 COUNT 1 BLOCK 2000 STREAMS streams.orders >
                     List<MapRecord<String, Object, Object>> list = stringRedisTemplate.opsForStream().read(
                             Consumer.from("g1", "c1"),
@@ -254,9 +255,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         order.setVoucherId(voucherId);
         // 你可以用 JSON，也可以用序列化
         // 增加消息发送的异常处理
-        //放入mq
         String jsonStr = JSONUtil.toJsonStr(order);
         try {
+            //放入mq
             rabbitTemplate.convertAndSend("X", "XA", jsonStr);
         } catch (Exception e) {
             log.error("发送 RabbitMQ 消息失败，订单ID: {}", orderId, e);

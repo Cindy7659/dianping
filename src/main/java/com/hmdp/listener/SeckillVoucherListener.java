@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
-
 import javax.annotation.Resource;
 
 @Component
@@ -40,7 +39,6 @@ public class SeckillVoucherListener {
                 .setSql("stock = stock - 1") // set stock = stock - 1
                 .eq("voucher_id", voucherId).gt("stock", 0) // where id = ? and stock > 0
                 .update();
-
     }
 
     /**
@@ -56,12 +54,10 @@ public class SeckillVoucherListener {
         VoucherOrder voucherOrder = JSONUtil.toBean(msg, VoucherOrder.class);
         log.info(voucherOrder.toString());
         voucherOrderService.save(voucherOrder);
-
         Long voucherId = voucherOrder.getVoucherId();
         seckillVoucherService.update()
                 .setSql("stock = stock - 1") // set stock = stock - 1
                 .eq("voucher_id", voucherId).gt("stock", 0) // where id = ? and stock > 0
                 .update();
-
     }
 }

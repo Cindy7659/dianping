@@ -55,7 +55,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         //3.符合，生成验证码
         String code = RandomUtil.randomNumbers(6);
-        //4.保存验证码到redis
+        //4.保存验证码到redis  login:code:${phone}
         stringRedisTemplate.opsForValue().set(RedisConstants.LOGIN_CODE_KEY + phone, code, 2, TimeUnit.MINUTES);
         //5.发送验证码
         log.info("短信验证码发送成功：{}", code);
@@ -86,7 +86,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (user == null) {
             user = createUserWithPhone(phone);
         }
-        //7.存在则保存到redis
+        //7.存在则保存到 redis
         //7.1 生成一个不带连字符-的 UUID 字符串作为 token
         String token = UUID.randomUUID().toString(true);
         //7.2 将user对象转为Hash存储
@@ -94,7 +94,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         Map<String, Object> map = BeanUtil.beanToMap(userDTO, new HashMap<>(),
                 CopyOptions.create().setIgnoreNullValue(true)
                         .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
-        //7.3 存储
+        //7.3 存储并设置过期时间 login:token:${token}  hash的数据结构!!!
         String tokenKey = RedisConstants.LOGIN_USER_KEY + token;
         stringRedisTemplate.opsForHash().putAll(tokenKey, map);
         stringRedisTemplate.expire(tokenKey, 30, TimeUnit.MINUTES);
