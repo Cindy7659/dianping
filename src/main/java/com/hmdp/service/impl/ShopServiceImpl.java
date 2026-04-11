@@ -12,6 +12,7 @@ import com.hmdp.utils.*;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.GeoResult;
 import org.springframework.data.geo.GeoResults;
+import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.domain.geo.GeoReference;
@@ -111,7 +112,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
                         new Distance(5000),
                         RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs().includeDistance().limit(end)
                 );
-        if (results == null) {
+        if (results == null || results.getContent().isEmpty()) {
+            // 缓存重建
+            loadShopGeoData();
             return Result.ok(Collections.emptyList());
         }
         //4.解析出id
@@ -139,5 +142,16 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         }
         //6.返回
         return Result.ok(shops);
+    }
+
+    private void loadShopGeoData() {
+        List<Shop> shops = query().list();
+        for (Shop shop : shops) {
+            if (shop.getX() != null && shop.getY() != null) {
+                String key = SHOP_GEO_KEY + shop.getTypeId();
+                stringRedisTemplate.opsForGeo()
+                        .add(key, new Point(shop.getX(), shop.getY()), shop.getId().toString());
+            }
+        }
     }
 }

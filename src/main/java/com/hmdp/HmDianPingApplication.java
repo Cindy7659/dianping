@@ -12,9 +12,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableRabbit
 @SpringBootApplication
 public class HmDianPingApplication {
-    //
     public static void main(String[] args) {
         SpringApplication.run(HmDianPingApplication.class, args);
     }
-
 }

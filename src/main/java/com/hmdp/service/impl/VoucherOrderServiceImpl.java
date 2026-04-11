@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.aop.framework.AopContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -58,6 +60,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private RedissonClient redissonClient;
 
     // 代理对象
+    @Resource
+    @Lazy
     private IVoucherOrderService proxy;
 
     //线程池
@@ -203,7 +207,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                     VoucherOrder voucherOrder = BeanUtil.fillBeanWithMap(values, new VoucherOrder(), true);
                     //4.如果获取成功，可以下单
                     handleVoucherOrder(voucherOrder);
-                    //5.ACK确认 SACK stream.orders g1 id
+                    //5.ACK确认 SACK stream.orders group1 id
                     stringRedisTemplate.opsForStream().acknowledge(queueName, "group1", record.getId());
                 } catch (Exception e) {
                     log.error("处理pending-list订单异常", e);
