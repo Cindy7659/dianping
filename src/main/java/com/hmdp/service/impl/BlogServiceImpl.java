@@ -24,10 +24,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -173,9 +170,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         int os = 1;
         for (ZSetOperations.TypedTuple<String> typedTuple : typedTuples) {
             //3.1.获取id
-            ids.add(Long.valueOf(typedTuple.getValue()));
+            ids.add(Long.valueOf(Objects.requireNonNull(typedTuple.getValue())));
             //3.2.获取分数（时间戳）
-            long time = typedTuple.getScore().longValue();
+            long time = Objects.requireNonNull(typedTuple.getScore()).longValue();
             if (time == minTime) {
                 os++;
             } else {

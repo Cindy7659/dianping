@@ -25,9 +25,11 @@ public class UploadController {
             // 生成新文件名
             String fileName = createNewFileName(originalFilename);
             // 保存文件
-            image.transferTo(new File(SystemConstants.IMAGE_UPLOAD_DIR, fileName));
-            // 返回结果
-            log.debug("文件上传成功，{}", fileName);
+            if (fileName != null) {
+                image.transferTo(new File(SystemConstants.IMAGE_UPLOAD_DIR, fileName));
+                // 返回结果
+                log.debug("文件上传成功，{}", fileName);
+            }
             return Result.ok(fileName);
         } catch (IOException e) {
             throw new RuntimeException("文件上传失败", e);
@@ -55,7 +57,10 @@ public class UploadController {
         // 判断目录是否存在
         File dir = new File(SystemConstants.IMAGE_UPLOAD_DIR, StrUtil.format("/blogs/{}/{}", d1, d2));
         if (!dir.exists()) {
-            dir.mkdirs();
+            boolean flag = dir.mkdirs();
+            if (!flag) {
+                return null;
+            }
         }
         // 生成文件名
         return StrUtil.format("/blogs/{}/{}/{}.{}", d1, d2, name, suffix);

@@ -135,8 +135,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         });
         //5.根据id查询shop
         String idStr = StrUtil.join(",", ids);
-        List<Shop> shops = query()
-                .in("id", ids).last("order by field(id," + idStr + ")").list();
+        List<Shop> shops = query().in("id", ids).last("order by field(id," + idStr + ")").list();
         for (Shop shop : shops) {
             shop.setDistance(distanceMap.get(shop.getId().toString()).getValue());
         }
