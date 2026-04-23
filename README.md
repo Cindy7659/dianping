@@ -112,3 +112,4 @@ Redis GEO本质：底层基于**Sorted Set（有序集合）**实现，存储每
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.适合一些数据量大且使用二值统计的场景<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.用String类型作为底层数据结构实现的一种统计二值状态的数据类型<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.String类型是会保存为二进制的字节数组，所以Redis就把字节数组的每个bit位利用起来，用来表示一个元素的二值状态<br/>
+

@@ -1,11 +1,11 @@
 server:
-  port: 8081
+  port: 8080
 spring:
   rabbitmq:
-    host: localhost
+    host: 192.168.86.128
     port: 5672
-    username: guest
-    password: guest
+    username: yeyao
+    password: 1234
   application:
     name: hmdp
   datasource:
@@ -25,6 +25,10 @@ spring:
         time-between-eviction-runs: 10s
   jackson:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
+  servlet:
+    multipart:
+      max-file-size: 10MB      # 单个文件最大大小
+      max-request-size: 10MB   # 整个请求最大大小
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
 logging:

@@ -18,6 +18,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -74,6 +76,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             //2.不符合，返回错误
             return Result.fail("手机号格式错误");
         }
+        // TODO 使用密码登录功能未实现
         //3.校验验证码
         String cacheCode = stringRedisTemplate.opsForValue().get(RedisConstants.LOGIN_CODE_KEY + phone);
         if (cacheCode == null || !cacheCode.equals(code)) {
@@ -100,6 +103,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         stringRedisTemplate.expire(tokenKey, 30, TimeUnit.MINUTES);
         //8.返回token
         return Result.ok(token);
+    }
+
+    // 登出功能
+    @Override
+    public Result loginOut(HttpServletRequest request) {
+        //1.获取请求头中的token
+        String token = request.getHeader("authorization");
+        //2.获取当前登录用户的key
+        String userKey = RedisConstants.LOGIN_USER_KEY + token;
+        //3.删除
+        stringRedisTemplate.delete(userKey);
+        UserHolder.removeUser();
+        return Result.ok("退出登录成功!");
     }
 
     /**
